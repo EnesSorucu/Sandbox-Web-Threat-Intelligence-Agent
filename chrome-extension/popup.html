@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecSandbox</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            width: 320px;
+            min-height: 200px;
+            background: #0a0e17;
+            color: #f1f2f6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            font-size: 13px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f1629, #0a0e17);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #a4b0be);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-icon { font-size: 20px; }
+
+        .status-section {
+            padding: 16px;
+        }
+
+        .url-input-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .url-input {
+            flex: 1;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: #f1f2f6;
+            padding: 7px 10px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .url-input:focus {
+            border-color: #4d7cff;
+        }
+
+        .analyze-btn {
+            background: #4d7cff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .analyze-btn:hover { background: #3b66df; }
+        .analyze-btn:disabled { background: #2a3f80; cursor: wait; }
+
+        .result-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .result-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .result-status.safe { border-left: 3px solid #2ed573; }
+        .result-status.suspicious { border-left: 3px solid #ffa502; }
+        .result-status.malicious { border-left: 3px solid #ff4757; }
+
+        .status-emoji { font-size: 24px; }
+        .status-label { font-weight: 700; font-size: 13px; }
+        .status-desc { font-size: 11px; color: #a4b0be; margin-top: 1px; }
+
+        .result-rows {
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .result-key { color: #a4b0be; }
+        .result-val { font-weight: 600; }
+        .text-safe { color: #2ed573; }
+        .text-warn { color: #ffa502; }
+        .text-danger { color: #ff4757; }
+
+        .alerts-list {
+            padding: 0 12px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .alert-item {
+            background: rgba(255,71,87,0.08);
+            border-left: 2px solid #ff4757;
+            border-radius: 4px;
+            padding: 5px 8px;
+            font-size: 11px;
+            color: #ff4757;
+        }
+
+        .placeholder {
+            text-align: center;
+            padding: 24px 16px;
+            color: #a4b0be;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .placeholder-icon { font-size: 32px; margin-bottom: 8px; }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #a4b0be;
+            font-size: 12px;
+        }
+
+        .footer {
+            padding: 8px 16px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #a4b0be;
+        }
+
+        .server-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .dot-online { background: #2ed573; }
+        .dot-offline { background: #ff4757; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="logo-icon">🛡️</span>
+        <span class="logo">SecSandbox</span>
+    </div>
+
+    <div class="status-section">
+        <div class="url-input-row">
+            <input type="text" class="url-input" id="urlInput" placeholder="https://example.com" />
+            <button class="analyze-btn" id="analyzeBtn">Scan</button>
+        </div>
+
+        <div id="resultArea">
+            <div class="placeholder">
+                <div class="placeholder-icon">🛡️</div>
+                <p>Enter a URL above or hover over<br>links on any page to check them.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span id="serverStatus">
+            <span class="server-dot dot-offline" id="serverDot"></span>
+            <span id="serverText">Checking server...</span>
+        </span>
+        <span>SecSandbox v1.0</span>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

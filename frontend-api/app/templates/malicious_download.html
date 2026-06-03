@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacked - Free Game Cheat</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #f44; text-align: center; padding-top: 50px; }
+    </style>
+</head>
+<body>
+    <h1>Drive-by Download Test</h1>
+    <p>If you are reading this, a malicious file is trying to download automatically!</p>
+    <script>
+        // Simulate an automatic background download (Drive-by Download)
+        setTimeout(() => {
+            const blob = new Blob(["Fake virus payload"], { type: "application/x-msdownload" });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "free_cheat_virus.exe";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }, 1000);
+    </script>
+</body>
+</html>

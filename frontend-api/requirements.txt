@@ -1,0 +1,6 @@
+fastapi[all]
+uvicorn[standard]
+jinja2
+playwright
+python-whois
+python-multipart

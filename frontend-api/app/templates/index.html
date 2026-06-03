@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecSandbox | AI Web Security Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=1.3">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1 class="logo"><i class="fa-solid fa-shield-halved"></i> SecSandbox</h1>
+            <p class="subtitle">AI-Powered Sandbox Web Security Analyzer</p>
+        </header>
+
+        <main>
+            <!-- URL Input Section -->
+            <section class="search-section glass-panel" id="search-section">
+                <form id="analyze-form">
+                    <div class="input-group">
+                        <i class="fa-solid fa-link input-icon"></i>
+                        <input type="url" id="url-input" placeholder="Enter target URL to analyze (e.g., https://example.com)" required>
+                        <button type="submit" class="btn-primary" id="analyze-btn">
+                            <span>Analyze</span> <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Loading State -->
+            <section id="loading-section" class="hidden">
+                <div class="glass-panel loading-panel">
+                    <div class="loader"></div>
+                    <h3 id="loading-text">Initializing headless browser...</h3>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section id="error-section" class="hidden">
+                <div class="glass-panel error-panel">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size:2rem;color:var(--danger);margin-bottom:1rem;"></i>
+                    <h3 id="error-text">An error occurred</h3>
+                    <button class="btn-primary" id="retry-btn" style="margin-top:1rem;">
+                        <span>Try Again</span> <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Results Section (Dynamically populated) -->
+            <section id="results-section" class="hidden">
+                <div class="results-grid">
+
+                    <!-- Main Status Overview -->
+                    <div class="glass-panel main-status" id="main-status-panel">
+                        <div class="status-icon">
+                            <i id="status-icon-el" class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="status-info">
+                            <h2 id="status-label">Analyzing...</h2>
+                            <p id="status-description"></p>
+                        </div>
+                    </div>
+
+                    <!-- Screenshot Preview -->
+                    <div class="glass-panel screenshot-panel" id="screenshot-panel">
+                        <h3><i class="fa-solid fa-camera"></i> Page Screenshot</h3>
+                        <div id="screenshot-content">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Alerts / Badges -->
+                    <div class="glass-panel alerts-panel" id="alerts-panel">
+                        <h3><i class="fa-solid fa-bell"></i> Critical Alerts</h3>
+                        <div class="badge-container" id="badge-container">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <p id="no-alerts" class="hidden" style="color:var(--text-muted);text-align:center;padding:1rem;">
+                            <i class="fa-solid fa-check-circle" style="color:var(--success);"></i> No critical alerts detected.
+                        </p>
+                    </div>
+
+                    <!-- Domain & SSL Details -->
+                    <div class="glass-panel details-panel">
+                        <h3><i class="fa-solid fa-globe"></i> Domain & SSL Details</h3>
+                        <div class="detail-grid" id="detail-grid">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Security Headers -->
+                    <div class="glass-panel headers-panel" id="headers-panel">
+                        <h3><i class="fa-solid fa-shield-halved"></i> Security Headers</h3>
+                        <div id="headers-content">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Cookie Analysis -->
+                    <div class="glass-panel cookie-panel" id="cookie-panel">
+                        <h3><i class="fa-solid fa-cookie-bite"></i> Cookie Security</h3>
+                        <div id="cookie-content">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Link Tree / Spider -->
+                    <div class="glass-panel link-panel" id="link-panel">
+                        <h3><i class="fa-solid fa-sitemap"></i> Link Tree Analysis</h3>
+                        <div id="link-content">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Code & Content Analysis -->
+                    <div class="glass-panel content-panel" id="content-panel">
+                        <h3><i class="fa-solid fa-code"></i> Code & Content Analysis</h3>
+                        <div id="content-analysis-details">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- AI Model Insights (placeholder until AI connected) -->
+                    <div class="glass-panel ai-panel" id="ai-panel">
+                        <h3><i class="fa-solid fa-brain"></i> AI Model Insights</h3>
+                        <div id="ai-content">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Form Analysis -->
+                    <div class="glass-panel form-panel" id="form-panel">
+                        <h3><i class="fa-solid fa-rectangle-list"></i> Form Analysis</h3>
+                        <div id="form-content">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- Technical Logs -->
+                    <div class="glass-panel logs-panel">
+                        <h3><i class="fa-solid fa-terminal"></i> Scan Logs</h3>
+                        <div class="terminal" id="terminal">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="{{ url_for('static', path='/js/script.js') }}?v=1.3"></script>
+</body>
+</html>

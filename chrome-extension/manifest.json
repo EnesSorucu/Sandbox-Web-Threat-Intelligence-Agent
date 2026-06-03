@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "SecSandbox - Web Security Analyzer",
+  "version": "1.0",
+  "description": "Analyzes links in real-time and shows security ratings before you click.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SecSandbox Security Analyzer"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

