@@ -17,15 +17,15 @@ services:
       - sandbox_network
 
   # Container 2: Placeholder for the future AI/NLP Microservice
-  # ai-service:
-  #   build:
-  #     context: ./ai-service
-  #     dockerfile: Dockerfile
-  #   container_name: secsandbox_ai
-  #   ports:
-  #     - "8001:8001"
-  #   networks:
-  #     - sandbox_network
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: secsandbox_ai
+    ports:
+      - "8001:8001"
+    networks:
+      - sandbox_network
 
 networks:
   sandbox_network:

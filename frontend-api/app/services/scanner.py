@@ -194,10 +194,29 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
         "obfuscation_score": content_result.obfuscation_score,
     }
 
-    # TODO: Mavi Problem - AI modelleri (Container 2) henüz bağlanmadığı için burada yapmacık (placeholder) değerler kullanılmıştır.
-    # Gerçek sistemde "ai_data" içeriği ai-service'e (FastAPI) gönderilecek ve gerçek NLP/XGBoost skorları alınacaktır.
-    ai_data.phishing_text_score = 65.5  # Test amaçlı yapmacık veri
-    ai_data.form_anomaly_score = 82.0   # Test amaçlı yapmacık veri
+    # Mavi Problem Çözümü: Gerçek AI servisine bağlanıyoruz.
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            ai_req_payload = {
+                "scraped_text": ai_data.page_text,
+                "dom_features": ai_data.form_features
+            }
+            
+            # API çağrısı
+            ai_resp = await client.post("http://ai-service:8001/analyze", json=ai_req_payload, timeout=8.0)
+            if ai_resp.status_code == 200:
+                ai_json = ai_resp.json()
+                ai_data.phishing_text_score = float(ai_json.get("phishing_text_risk_score", 0.0)) * 100
+                ai_data.form_anomaly_score = float(ai_json.get("dom_anomaly_score", 0.0)) * 100
+            else:
+                logs.append(LogEntry(level="WARN", message=f"ai-service returned status {ai_resp.status_code}"))
+                ai_data.phishing_text_score = 0.0
+                ai_data.form_anomaly_score = 0.0
+    except Exception as e:
+        logs.append(LogEntry(level="WARN", message=f"Failed to connect to ai-service: {str(e)}"))
+        ai_data.phishing_text_score = 0.0
+        ai_data.form_anomaly_score = 0.0
 
     response.ai_data = ai_data
 
