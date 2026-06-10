@@ -13,8 +13,8 @@ import unicodedata
 import csv
 from pathlib import Path
 
-# TODO: Mavi Problem - Şimdilik Majestic Million dataset'inden Top 10k markayı çekiyoruz. 
-# Tam teşekküllü bir Threat Intelligence için YARA veya benzeri dış servisler kullanılmalıdır.
+# Load popular brands dataset for typosquatting detection.
+# A full Threat Intelligence service could replace this with an external API.
 POPULAR_BRANDS = []
 
 def load_popular_brands():

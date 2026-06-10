@@ -7,8 +7,8 @@ import re
 from models.schemas import ContentAnalysis
 
 
-# TODO: Mavi Problem - Bu zararlı kod (obfuscation) anahtar kelime listesi yapmacık/kısıtlı bir veri setidir.
-# Gerçek bir sistemde YARA kuralları veya daha gelişmiş statik kod analiz (SAST) veri tabanları kullanılmalıdır.
+# Defined rules and associated risk weights for JavaScript obfuscation detection.
+# In a production system, this should be backed by advanced SAST tools or YARA rules.
 OBFUSCATION_RULES = {
     r"eval\(": 40,
     r"unescape\(": 30,
