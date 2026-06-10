@@ -275,6 +275,22 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
         })
         threat_score += 25
 
+    if domain_result.registrar_suspicious:
+        alerts.append({
+            "type": "caution",
+            "icon": "fa-user-secret",
+            "text": "Registrar uses anonymity/privacy protection (Common in phishing)"
+        })
+        threat_score += 15
+
+    if domain_result.is_expiration_near:
+        alerts.append({
+            "type": "caution",
+            "icon": "fa-hourglass-end",
+            "text": "Domain expires very soon (< 30 days)"
+        })
+        threat_score += 10
+
     # Content issues
     if content_result.obfuscation_score >= 40:
         alerts.append({

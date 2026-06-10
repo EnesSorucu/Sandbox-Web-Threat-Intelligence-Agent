@@ -45,6 +45,10 @@ Sitenin tarayıcılar üzerindeki güvenlik koruma başlıkları incelenir ve si
 ### 7. Görsel Kanıt (Headless Browser Screenshot)
 *   Playwright aracılığıyla siteye arka planda girilir ve sitenin o anki gerçek tarayıcı görüntüsü yakalanarak arayüzde gösterilir. Bu sayede kullanıcı zararlı siteye tıklamadan sitenin neye benzediğini görebilir.
 
+### 8. Yapay Zeka (AI) Destekli Tehdit Algılama (XGBoost & NLP)
+*   **DOM Yapısı Analizi (XGBoost):** Geleneksel kural tabanlı sistemlerin ötesine geçerek, sitenin HTML/DOM iskeletindeki 30 farklı özelliği (Örn: gizli iframeler, şüpheli form yönlendirmeleri, IP tabanlı URL'ler, sağ tık engellemeleri) analiz eden eğitilmiş bir XGBoost makine öğrenmesi modeli kullanılır.
+*   **NLP ile Metin Analizi (Deep Learning):** Sitedeki metinler Word2Vec ve Derin Öğrenme (Keras) ağı ile taranarak insanları kandırmaya yönelik (Örn: "Hesabınız askıya alındı, hemen tıklayın") manipülatif oltalama (phishing) metinleri tespit edilir.
+
 ---
 
 ## 🛠️ Mimari ve Kullanılan Teknolojiler

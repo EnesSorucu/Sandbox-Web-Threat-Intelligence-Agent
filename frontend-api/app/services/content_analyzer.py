@@ -9,19 +9,21 @@ from models.schemas import ContentAnalysis
 
 # TODO: Mavi Problem - Bu zararlı kod (obfuscation) anahtar kelime listesi yapmacık/kısıtlı bir veri setidir.
 # Gerçek bir sistemde YARA kuralları veya daha gelişmiş statik kod analiz (SAST) veri tabanları kullanılmalıdır.
-OBFUSCATION_KEYWORDS = [
-    "eval(",
-    "unescape(",
-    "document.write(",
-    "String.fromCharCode(",
-    "atob(",
-    "btoa(",
-    "decodeURIComponent(",
-    "\\x",  # hex escape sequences
-]
+OBFUSCATION_RULES = {
+    r"eval\(": 40,
+    r"unescape\(": 30,
+    r"String\.fromCharCode\(": 30,
+    r"atob\(": 20,
+    r"btoa\(": 20,
+    r"decodeURIComponent\(": 10,
+    r"\\x[0-9a-fA-F]{2}": 20,  # hex escape sequences
+}
 
-# Regex for heavy Base64 blocks (long strings of Base64 chars)
-BASE64_PATTERN = re.compile(r'[A-Za-z0-9+/=]{100,}')
+# Regex for heavy Base64 blocks (blocks longer than 200 chars)
+BASE64_PATTERN = re.compile(r'(?:[A-Za-z0-9+/]{4}){50,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?')
+
+# Regex for document.write false-positive analysis
+DOC_WRITE_PATTERN = re.compile(r"document\.write\s*\(\s*(['\"`])(.*?)(\1)\s*\)", re.IGNORECASE)
 
 
 def analyze_content(
@@ -42,18 +44,45 @@ def analyze_content(
     # --- 1. JS Obfuscation Detection ---
     all_js = "\n".join(js_contents) + "\n" + page_source
     found_keywords = set()
+    total_score = 0
 
-    for keyword in OBFUSCATION_KEYWORDS:
-        if keyword.lower() in all_js.lower():
-            found_keywords.add(keyword)
+    # Performans ve Ağırlıklı Puanlama (Regex tabanlı)
+    for pattern_str, weight in OBFUSCATION_RULES.items():
+        if re.search(pattern_str, all_js, re.IGNORECASE):
+            clean_name = pattern_str.replace("\\", "").replace("(", "").replace("[0-9a-fA-F]{2}", "hex")
+            found_keywords.add(f"{clean_name} (+{weight})")
+            total_score += weight
 
-    # Check for heavy base64 blocks
+    # document.write false-positive analizi
+    doc_write_matches = DOC_WRITE_PATTERN.findall(all_js)
+    if doc_write_matches:
+        is_malicious_write = False
+        for match in doc_write_matches:
+            content = match[1].lower()
+            if "<iframe" in content or "<script" in content:
+                is_malicious_write = True
+                break
+        
+        if is_malicious_write:
+            found_keywords.add("Malicious document.write [iframe/script] (+40)")
+            total_score += 40
+        else:
+            found_keywords.add("Standard document.write (+5)")
+            total_score += 5
+
+    # Base64 Kontrolü (Sadece uzun bloklar risktir)
     base64_matches = BASE64_PATTERN.findall(all_js)
-    if len(base64_matches) > 2:
-        found_keywords.add("Heavy Base64 blocks")
+    longest_b64 = max((len(m) for m in base64_matches), default=0)
+    
+    if longest_b64 > 500:
+        found_keywords.add("Critical Base64 block > 500 chars (+40)")
+        total_score += 40
+    elif longest_b64 > 200:
+        found_keywords.add("Suspicious Base64 block > 200 chars (+20)")
+        total_score += 20
 
     result.obfuscation_keywords_found = list(found_keywords)
-    result.obfuscation_score = min(len(found_keywords) * 20, 100)
+    result.obfuscation_score = min(total_score, 100)
 
     # --- 2. Hidden Elements Analysis ---
     result.hidden_element_count = len(hidden_elements)

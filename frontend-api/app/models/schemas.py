@@ -27,8 +27,11 @@ class DomainInfo(BaseModel):
     domain: str = ""
     creation_date: Optional[str] = None
     age_days: Optional[int] = None
+    age_score: float = 0.0
     registrar: Optional[str] = None
+    registrar_suspicious: bool = False
     is_new_domain: bool = False
+    is_expiration_near: bool = False
     typosquatting_target: Optional[str] = None
     is_typosquatting: bool = False
     error: Optional[str] = None
