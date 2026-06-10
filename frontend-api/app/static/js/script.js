@@ -452,6 +452,20 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</div>';
         }
 
+        const hidden = linkData.hidden_links || [];
+        if (hidden.length > 0) {
+            html += '<h4 class="link-subtitle text-danger"><i class="fa-solid fa-eye-slash"></i> Hidden Links</h4>';
+            html += '<div class="link-issues">';
+            hidden.forEach(h => {
+                html += `
+                    <div class="link-issue-item link-issue-danger">
+                        <span>${escapeHtml(h.href)}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
         if (extDomains.length > 0) {
             html += '<h4 class="link-subtitle"><i class="fa-solid fa-globe"></i> External Domains</h4>';
             html += '<div class="ext-domain-list">';

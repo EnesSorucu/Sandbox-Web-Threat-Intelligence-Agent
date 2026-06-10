@@ -203,14 +203,14 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
                 "dom_features": ai_data.form_features
             }
             
-            # API çağrısı
-            ai_resp = await client.post("http://ai-service:8001/analyze", json=ai_req_payload, timeout=8.0)
+            # API çağrısı (İlk çalışmada modelin RAM'e yüklenmesi 15-20 saniye sürebilir, timeout uzatıldı)
+            ai_resp = await client.post("http://ai-service:8001/analyze", json=ai_req_payload, timeout=30.0)
             if ai_resp.status_code == 200:
                 ai_json = ai_resp.json()
                 ai_data.phishing_text_score = float(ai_json.get("phishing_text_risk_score", 0.0)) * 100
                 ai_data.form_anomaly_score = float(ai_json.get("dom_anomaly_score", 0.0)) * 100
             else:
-                logs.append(LogEntry(level="WARN", message=f"ai-service returned status {ai_resp.status_code}"))
+                logs.append(LogEntry(level="WARN", message=f"ai-service returned status {ai_resp.status_code}: {ai_resp.text}"))
                 ai_data.phishing_text_score = 0.0
                 ai_data.form_anomaly_score = 0.0
     except Exception as e:

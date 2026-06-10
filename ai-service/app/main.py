@@ -53,7 +53,7 @@ else:
 # ---- 2. REQUEST MODELLERİ (PYDANTIC) ----
 class AnalysisRequest(BaseModel):
     scraped_text: str  
-    dom_features: Dict[str, int] 
+    dom_features: Dict[str, float] 
 
 # Word2Vec Cümle Vektörleştirme Yardımcı Fonksiyonu
 def get_sentence_vector(text: str, w2v, vec_size=100):
