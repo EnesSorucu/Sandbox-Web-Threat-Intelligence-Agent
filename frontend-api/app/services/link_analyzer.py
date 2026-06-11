@@ -59,10 +59,21 @@ def analyze_links(links: list[dict], page_domain: str) -> dict:
 
         # Check for hidden links
         if not is_visible:
-            hidden_links.append({
-                "href": href[:200],
-                "text": text[:100]
-            })
+            is_suspicious_hidden = True
+            if link_domain and (link_domain == page_domain or link_domain.endswith("." + page_domain)):
+                is_suspicious_hidden = False  # Internal links are safe even if hidden
+            elif link_domain:
+                # Dış link ise popüler markaları kontrol et
+                for pb in POPULAR_BRANDS:
+                    if len(pb) >= 4 and pb.lower() in link_domain:
+                        is_suspicious_hidden = False
+                        break
+            
+            if is_suspicious_hidden:
+                hidden_links.append({
+                    "href": href[:200],
+                    "text": text[:100]
+                })
 
         # Classify internal vs external
         if link_domain and link_domain != page_domain and not link_domain.endswith("." + page_domain):

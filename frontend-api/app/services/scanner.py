@@ -11,6 +11,7 @@ Orchestrates the full analysis pipeline:
 8. AI data preprocessing (data prepared, model not yet connected)
 9. Alert generation & overall verdict
 """
+from urllib.parse import urlparse
 from models.schemas import (
     AnalyzeResponse, LogEntry, AIPreprocessedData,
 )
@@ -209,8 +210,21 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
             ai_resp = await client.post("http://ai-service:8001/analyze", json=ai_req_payload, timeout=30.0)
             if ai_resp.status_code == 200:
                 ai_json = ai_resp.json()
-                ai_data.phishing_text_score = float(ai_json.get("phishing_text_risk_score", 0.0)) * 100
-                ai_data.form_anomaly_score = float(ai_json.get("dom_anomaly_score", 0.0)) * 100
+                phishing_score = float(ai_json.get("phishing_text_risk_score", 0.0)) * 100
+                anomaly_score = float(ai_json.get("dom_anomaly_score", 0.0)) * 100
+
+                # Popüler markalar için AI yanlış alarmlarını (false-positives) baskıla
+                from app.services.domain_analyzer import POPULAR_BRANDS
+                domain_str = (domain_result.domain if domain_result else urlparse(url).hostname).lower()
+                is_popular = any(len(pb) >= 4 and pb.lower() in domain_str for pb in POPULAR_BRANDS)
+                # Ekstra bilinen markalar (eğer CSV'de yoksa)
+                extra_brands = ["spotify", "netflix", "apple", "microsoft", "google", "youtube"]
+                if is_popular or any(eb in domain_str for eb in extra_brands):
+                    phishing_score = min(phishing_score, 15.0)  # Max %15
+                    anomaly_score = min(anomaly_score, 10.0)    # Max %10
+
+                ai_data.phishing_text_score = phishing_score
+                ai_data.form_anomaly_score = anomaly_score
             else:
                 logs.append(LogEntry(level="WARN", message=f"ai-service returned status {ai_resp.status_code}: {ai_resp.text}"))
                 ai_data.phishing_text_score = 0.0
@@ -318,14 +332,14 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
         alerts.append({
             "type": "warning",
             "icon": "fa-shield-halved",
-            "text": f"Critical: No Security Headers (Grade: F — site has zero protection)"
+            "text": "Critical: No Security Headers (Grade: F — site has zero protection)"
         })
         threat_score += 25
     elif headers_result.get("grade") == "D":
         alerts.append({
             "type": "caution",
             "icon": "fa-shield-halved",
-            "text": f"Weak Security Headers (Grade: D)"
+            "text": "Weak Security Headers (Grade: D)"
         })
         threat_score += 15
 

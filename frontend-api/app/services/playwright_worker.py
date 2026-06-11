@@ -140,11 +140,12 @@ async def run_playwright_scan(url: str, logs: list[LogEntry]) -> dict:
 
         # --- Detect hidden elements ---
         logs.append(LogEntry(level="INFO", message="Scanning for hidden elements..."))
+        from app.services.domain_analyzer import POPULAR_BRANDS
+        
         hidden_elements = await page.evaluate("""
-            (pageHost) => {
+            ([pageHost, popularBrands]) => {
                 const all = document.querySelectorAll('form, a, input, iframe');
                 const hidden = [];
-                const popularBrands = ["google", "youtube", "facebook", "twitter", "instagram", "linkedin", "apple", "microsoft", "spotify", "netflix"];
                 
                 all.forEach(el => {
                     const style = window.getComputedStyle(el);
@@ -179,7 +180,7 @@ async def run_playwright_scan(url: str, logs: list[LogEntry]) -> dict:
                                 const linkHost = url.hostname.toLowerCase();
                                 if (linkHost && !linkHost.includes(pageHost)) {
                                     // Popüler markalara giden linkler hariç
-                                    const isPopular = popularBrands.some(brand => linkHost.includes(brand));
+                                    const isPopular = popularBrands.some(brand => brand.length >= 4 && linkHost.includes(brand.toLowerCase()));
                                     if (!isPopular) {
                                         isSuspicious = true;
                                         info += ' href=' + el.href;
@@ -195,7 +196,7 @@ async def run_playwright_scan(url: str, logs: list[LogEntry]) -> dict:
                 });
                 return hidden;
             }
-        """, urlparse(url).hostname or "")
+        """, [urlparse(url).hostname or "", POPULAR_BRANDS])
 
         if hidden_elements:
             logs.append(LogEntry(
