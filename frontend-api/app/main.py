@@ -43,7 +43,7 @@ async def serve_malicious_test(request: Request):
     Simulates a Drive-By Download attack for testing purposes.
     As soon as the page loads, it automatically downloads a dummy file.
     """
-    return templates.TemplateResponse(request=request, name="malicious_download.html")
+    return templates.TemplateResponse("malicious_download.html", {"request": request})
 
 @app.get("/malicious-form", response_class=HTMLResponse)
 async def serve_malicious_form(request: Request):
@@ -51,11 +51,11 @@ async def serve_malicious_form(request: Request):
     Simulates a Fake Phishing Login Form for testing purposes.
     Contains password fields and suspicious form actions.
     """
-    return templates.TemplateResponse(request=request, name="malicious_form.html")
+    return templates.TemplateResponse("malicious_form.html", {"request": request})
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/api/analyze")
@@ -66,8 +66,8 @@ async def analyze_url(body: AnalyzeRequest):
     the complete security report as JSON.
     """
     try:
-        result = await run_full_scan(body.url)
-        return result.model_dump()
+        result = await run_full_scan(body.url) # scanner dosyasını çalıştırır url verilir
+        return result.model_dump() #analiz sonuçları json formatında döner
     except Exception as e:
         return JSONResponse(
             status_code=500,
