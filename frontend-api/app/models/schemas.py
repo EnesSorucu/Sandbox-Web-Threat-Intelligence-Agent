@@ -112,6 +112,7 @@ class AnalyzeResponse(BaseModel):
     link_analysis: dict = {}
 
     alerts: list[dict] = []
+    threat_score: int = 0
     logs: list[LogEntry] = []
     error: Optional[str] = None
 

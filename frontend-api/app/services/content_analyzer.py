@@ -71,13 +71,19 @@ def analyze_content(
             total_score += 5
 
     # Base64 Kontrolü (Sadece uzun bloklar risktir)
-    base64_matches = BASE64_PATTERN.findall(all_js)
+    # data:image, data:font, vb. Base64 medya/font blokları zararsızdır, onları temizle
+    # Whitespace/newlines içeren multiline blokları da temizlemek için [^"\'\)]+ kullanıyoruz
+    cleaned_js = re.sub(r'data:(?:image|font|audio|video|application/font)[^"\'\)]+', '', all_js)
+    base64_matches = BASE64_PATTERN.findall(cleaned_js)
     longest_b64 = max((len(m) for m in base64_matches), default=0)
     
-    if longest_b64 > 500:
+    # Çözücü/deşifre edici fonksiyonlar olmadan tek başına ham base64 bloğu tehlikeli değildir (sadece resim, font veya config verisidir)
+    has_decoder = any(any(kw in kw_item for kw in ["eval", "unescape", "fromCharCode", "atob", "btoa"]) for kw_item in found_keywords)
+
+    if longest_b64 > 500 and has_decoder:
         found_keywords.add("Critical Base64 block > 500 chars (+40)")
         total_score += 40
-    elif longest_b64 > 200:
+    elif longest_b64 > 200 and has_decoder:
         found_keywords.add("Suspicious Base64 block > 200 chars (+20)")
         total_score += 20
 

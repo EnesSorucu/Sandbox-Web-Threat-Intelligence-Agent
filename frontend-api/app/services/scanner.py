@@ -137,7 +137,9 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
     # PHASE 6: Cookie Security Analysis
     # =============================
     logs.append(LogEntry(level="INFO", message="Analyzing cookie security..."))
-    cookie_result = analyze_cookies(scan_data.get("cookies", []))
+    # Sitede giriş formu var mı? (Cookie analizi için bağlam bilgisi)
+    has_login = any(f.has_password_field or f.has_email_field for f in response.forms.forms)
+    cookie_result = analyze_cookies(scan_data.get("cookies", []), has_login_form=has_login)
     response.cookie_analysis = cookie_result
 
     total_cookies = cookie_result.get("total_cookies", 0)
@@ -300,13 +302,16 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
         })
         threat_score += 25
 
-    if content_result.hidden_element_count > 3:
+    # Hidden element kontrolü: Sadece gizli FORM veya IFRAME varsa tehlikelidir
+    # (Gizli <div> veya <span> modern sitelerde menü/pop-up için normaldir)
+    hidden_forms_count = len(content_result.hidden_forms)
+    if hidden_forms_count > 0:
         alerts.append({
-            "type": "caution",
+            "type": "warning",
             "icon": "fa-eye-low-vision",
-            "text": f"{content_result.hidden_element_count} Hidden Elements Found"
+            "text": f"{hidden_forms_count} Hidden Form(s) Found (potential credential theft)"
         })
-        threat_score += 10
+        threat_score += 20
 
     # Security Headers issues
     if headers_result.get("grade") == "F":
@@ -324,14 +329,14 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
         })
         threat_score += 15
 
-    # Cookie issues
-    if insecure_count > 3:
+    # Cookie issues (sadece sitede giriş formu varsa önemli)
+    if insecure_count > 0 and has_login:
         alerts.append({
             "type": "caution",
             "icon": "fa-cookie-bite",
-            "text": f"{insecure_count} Insecure Cookies Detected"
+            "text": f"{insecure_count} Insecure Cookie(s) on Login Page (session hijack risk)"
         })
-        threat_score += 5
+        threat_score += 10
 
     # Link issues
     if suspicious_links > 0:
@@ -361,14 +366,25 @@ async def run_full_scan(url: str) -> AnalyzeResponse:
                 })
                 threat_score += 30
 
+    # =====================================================================
+    # Domain İtibar Bonusu (Reputation Scoring)
+    # Köklü ve eski domainler daha güvenilirdir, tehdit puanından düşülür
+    # =====================================================================
+    if domain_result and domain_result.age_days is not None:
+        if domain_result.age_days > 1825:  # 5 yıldan eski
+            threat_score = max(0, threat_score - 10)
+        elif domain_result.age_days > 730:  # 2 yıldan eski
+            threat_score = max(0, threat_score - 5)
+
     response.alerts = alerts
+    response.threat_score = threat_score
 
     # Determine overall status
     if threat_score >= 80:
         response.overall_status = "malicious"
         response.overall_label = "Malicious Site Detected"
         response.overall_description = "HIGH RISK - DO NOT PROCEED"
-    elif threat_score >= 30:
+    elif threat_score >= 40:
         response.overall_status = "suspicious"
         response.overall_label = "Suspicious Activity Detected"
         response.overall_description = "PROCEED WITH CAUTION"

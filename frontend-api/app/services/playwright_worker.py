@@ -141,22 +141,61 @@ async def run_playwright_scan(url: str, logs: list[LogEntry]) -> dict:
         # --- Detect hidden elements ---
         logs.append(LogEntry(level="INFO", message="Scanning for hidden elements..."))
         hidden_elements = await page.evaluate("""
-            () => {
+            (pageHost) => {
                 const all = document.querySelectorAll('form, a, input, iframe');
                 const hidden = [];
+                const popularBrands = ["google", "youtube", "facebook", "twitter", "instagram", "linkedin", "apple", "microsoft", "spotify", "netflix"];
+                
                 all.forEach(el => {
                     const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                    const isHidden = style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || el.type === 'hidden';
+                    
+                    if (isHidden) {
+                        const tag = el.tagName.toLowerCase();
+                        let isSuspicious = false;
                         let info = el.tagName;
-                        if (el.action) info += ' action=' + el.action;
-                        if (el.href) info += ' href=' + el.href;
-                        if (el.name) info += ' name=' + el.name;
-                        hidden.push({ tag: el.tagName.toLowerCase(), info: info });
+                        
+                        if (tag === 'iframe') {
+                            isSuspicious = true; // Bütün gizli iframe'ler şüpheli olabilir (clickjacking)
+                            info += ' src=' + (el.src || 'about:blank');
+                        } else if (tag === 'form') {
+                            // Sadece içinde input olan gizli formlar şüphelidir
+                            const hasInputs = el.querySelectorAll('input').length > 0;
+                            if (hasInputs) {
+                                isSuspicious = true;
+                                info += ' action=' + (el.action || 'self');
+                            }
+                        } else if (tag === 'input') {
+                            // Sadece gizli şifre veya email alanları şüphelidir (autofill theft)
+                            const type = (el.type || '').toLowerCase();
+                            if (type === 'password' || type === 'email') {
+                                isSuspicious = true;
+                                info += ' type=' + type + (el.name ? ' name=' + el.name : '');
+                            }
+                        } else if (tag === 'a' && el.href) {
+                            // Sadece dış domainlere giden ve popüler olmayan linkler şüphelidir
+                            try {
+                                const url = new URL(el.href);
+                                const linkHost = url.hostname.toLowerCase();
+                                if (linkHost && !linkHost.includes(pageHost)) {
+                                    // Popüler markalara giden linkler hariç
+                                    const isPopular = popularBrands.some(brand => linkHost.includes(brand));
+                                    if (!isPopular) {
+                                        isSuspicious = true;
+                                        info += ' href=' + el.href;
+                                    }
+                                }
+                            } catch(e) {}
+                        }
+                        
+                        if (isSuspicious) {
+                            hidden.push({ tag: tag, info: info });
+                        }
                     }
                 });
                 return hidden;
             }
-        """)
+        """, urlparse(url).hostname or "")
 
         if hidden_elements:
             logs.append(LogEntry(

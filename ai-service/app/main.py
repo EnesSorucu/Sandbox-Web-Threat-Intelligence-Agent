@@ -103,8 +103,10 @@ async def analyze_website(payload: AnalysisRequest):
         dom_risk_score = float(dom_pred_prob[0]) # 0 (phishing) endeksli risk olasılığı
 
         # DOM Veri Seyrekliği Dengesi (Sparsity Scaling)
-        if len(payload.dom_features) < 30:
-            dom_risk_score = 0.20
+        # Eksik özellik varsa modelin tahminini güven oranıyla ölçekle (eskiden sabit 0.20 yazıyordu)
+        feature_confidence = len(payload.dom_features) / 30.0  # 8/30 = 0.27 güven
+        if feature_confidence < 1.0:
+            dom_risk_score = dom_risk_score * feature_confidence
 
         # --- C. RADİKAL AÇIKLAMA (AI INSIGHTS) ---
         insights = []

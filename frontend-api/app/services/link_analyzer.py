@@ -4,6 +4,8 @@ Extracts all links from the page and classifies them by risk level.
 """
 from urllib.parse import urlparse
 from app.services.domain_analyzer import POPULAR_BRANDS
+import re
+import re
 
 def analyze_links(links: list[dict], page_domain: str) -> dict:
     """
@@ -40,7 +42,7 @@ def analyze_links(links: list[dict], page_domain: str) -> dict:
     hidden_links = []
     external_domains = set()
 
-    for link in links:
+    for link in links:  # linkleri temizler
         href = link.get("href", "").strip()
         text = link.get("text", "").strip()
         is_visible = link.get("is_visible", True)
@@ -87,7 +89,7 @@ def analyze_links(links: list[dict], page_domain: str) -> dict:
                 "text": text[:100],
             })
 
-        # Check for misleading links (text vs href mismatch)
+        # Check for misleading links (text vs href mismatch) uyuşma kontrolü
         if text and link_domain:
             text_lower = text.lower().strip()
             
@@ -110,17 +112,28 @@ def analyze_links(links: list[dict], page_domain: str) -> dict:
 
             # 2. Brand mimicking (Text contains a brand name but points to a different domain)
             if link_domain != page_domain and not link_domain.endswith("." + page_domain):
-                for brand in POPULAR_BRANDS:
-                    # If brand name is in the link text but not in the destination domain
-                    if brand in text_lower and brand not in link_domain:
-                        suspicious_links.append({
-                            "displayed_text": text[:100],
-                            "actual_href": href[:200],
-                            "reason": f"Brand '{brand}' mentioned in text but leads to {link_domain}",
-                            "text_domain": brand,
-                            "actual_domain": link_domain,
-                        })
+                # Eğer hedef domain zaten popüler/güvenilir bir markaysa (Örn: youtube.com, x.com, wsj.com, barrons.com),
+                # bu bir yanıltıcı taklit değildir, meşru bir dış yönlendirmedir.
+                dest_is_popular = False
+                for pb in POPULAR_BRANDS:
+                    if len(pb) >= 4 and pb.lower() in link_domain:
+                        dest_is_popular = True
                         break
+                
+                if not dest_is_popular:
+                    # Sadece tam kelimeleri alıyoruz (Örn: "oturum" içindeki "tur" markasını engellemek için)
+                    words = set(re.findall(r'\w+', text_lower))
+                    for brand in POPULAR_BRANDS:
+                        # Marka adının en az 4 harfli olması ve tam bir kelime olarak geçmesi şartı
+                        if len(brand) >= 4 and brand.lower() in words and brand.lower() not in link_domain:
+                            suspicious_links.append({
+                                "displayed_text": text[:100],
+                                "actual_href": href[:200],
+                                "reason": f"Brand '{brand}' mentioned in text but leads to {link_domain}",
+                                "text_domain": brand,
+                                "actual_domain": link_domain,
+                            })
+                            break
 
     return {
         "total_links": internal + external,

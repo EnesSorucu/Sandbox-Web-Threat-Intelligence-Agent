@@ -65,16 +65,19 @@ document.addEventListener('DOMContentLoaded', () => {
         showSection(searchSection);
     });
 
-    // Form submission
+    // Form submit edildiğinde çalışacak ana asenkron fonksiyon
+    // Kullanıcının girdiği URL'yi arka uca (backend) göndeririz
     form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const targetUrl = urlInput.value.trim();
-        if (!targetUrl) return;
+        e.preventDefault(); // Formun varsayılan sayfa yenileme davranışını engeller
+        const targetUrl = urlInput.value.trim(); // Boşlukları temizleyerek URL'yi alır
+        if (!targetUrl) return; // Eğer URL girilmemişse işlemi durdurur
 
         showSection(loadingSection);
         startLoadingAnimation();
 
         try {
+            // FastAPI backend'ine HTTP POST isteği atarız
+            // Girdiğimiz URL'yi JSON formatında gövdeye (body) ekleriz
             const response = await fetch('/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -83,13 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             stopLoadingAnimation();
 
+            // Eğer sunucudan 200 OK harici bir cevap (örn: 500, 404) dönerse hata fırlatırız
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.error || `Server error: ${response.status}`);
             }
 
+            // Gelen JSON verisini parse edip JavaScript objesine dönüştürürüz
             const data = await response.json();
 
+            // Backend 200 dönse bile kendi içinde bir analiz hatası (örn: Playwright çökmesi) verdiyse bunu yakalarız
             if (data.error && data.overall_status === 'error') {
                 throw new Error(data.error);
             }
@@ -154,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         label.innerText = data.overall_label || 'Analysis Complete';
         desc.innerText = data.overall_description || '';
     }
+
 
     function renderScreenshot(b64) {
         const content = document.getElementById('screenshot-content');
@@ -596,12 +603,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Check if '?url=...' is passed in the URL parameters (context menu redirect)
+    // Tarayıcı eklentisinden (Chrome Extension) sağ tık ile yönlendirme yapıldığında
+    // URL parametresindeki '?url=...' değerini okur ve otomatik olarak analizi başlatır
     const urlParams = new URLSearchParams(window.location.search);
     const urlQuery = urlParams.get('url');
     if (urlQuery) {
         urlInput.value = urlQuery;
-        // Trigger submit
+        // Kullanıcı butona basmış gibi otomatik olarak formu tetikler (submit)
         form.dispatchEvent(new Event('submit'));
     }
 
