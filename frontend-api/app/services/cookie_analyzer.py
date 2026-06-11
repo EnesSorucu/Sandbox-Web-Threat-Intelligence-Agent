@@ -100,12 +100,12 @@ def analyze_cookies(cookies: list[dict], has_login_form: bool = False) -> dict:
         # (Çünkü kullanıcı zaten giriş yapmıyor, çalınacak kimlik bilgisi yok)
         sensitive_weight = 1.0 if has_login_form else 0.5
 
-        # 1. HttpOnly Check (Critical for sensitive cookies) # only https acces to these cookies
+        # 1. HttpOnly Check (Critical for sensitive cookies)
         if is_sensitive and not is_tracking and not cookie.get("httpOnly", False):
             issues.append("Missing HttpOnly (XSS risk)")
             total_issues += int(2 * sensitive_weight)
 
-        # 2. Secure Flag Check (Applies to both sensitive and tracking cookies) #ağ katmanındakı dınlemelere karsı korur
+        # 2. Secure Flag Check (Applies to both sensitive and tracking cookies)
         if not cookie.get("secure", False):
             if is_sensitive and not is_tracking:
                 issues.append("Missing Secure flag (Sent over HTTP)")
@@ -114,7 +114,7 @@ def analyze_cookies(cookies: list[dict], has_login_form: bool = False) -> dict:
                 issues.append("Missing Secure flag (Tracking data sent over HTTP)")
                 total_issues += 1 # Tracking over HTTP is also a risk
 
-        # 3. SameSite Check #cookies between websites manages
+        # 3. SameSite Check
         same_site = cookie.get("sameSite", "")
         if not same_site:
             if is_sensitive and not is_tracking:
